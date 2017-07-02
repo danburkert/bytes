@@ -766,11 +766,15 @@ impl Bytes {
     }
 }
 
-impl IntoBuf for Bytes {
-    type Buf = Cursor<Self>;
-
-    fn into_buf(self) -> Self::Buf {
-        Cursor::new(self)
+impl Buf for Bytes {
+    fn remaining(&self) -> usize {
+        self.len()
+    }
+    fn bytes(&self) -> &[u8] {
+        &self[..]
+    }
+    fn advance(&mut self, cnt: usize) {
+        self.split_to(cnt);
     }
 }
 
@@ -886,7 +890,7 @@ impl Borrow<[u8]> for Bytes {
 
 impl IntoIterator for Bytes {
     type Item = u8;
-    type IntoIter = Iter<Cursor<Bytes>>;
+    type IntoIter = Iter<Bytes>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.into_buf().iter()
@@ -895,10 +899,10 @@ impl IntoIterator for Bytes {
 
 impl<'a> IntoIterator for &'a Bytes {
     type Item = u8;
-    type IntoIter = Iter<Cursor<&'a Bytes>>;
+    type IntoIter = Iter<Bytes>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.into_buf().iter()
+        self.clone().into_iter()
     }
 }
 
@@ -1375,10 +1379,10 @@ impl BufMut for BytesMut {
 }
 
 impl IntoBuf for BytesMut {
-    type Buf = Cursor<Self>;
+    type Buf = Bytes;
 
     fn into_buf(self) -> Self::Buf {
-        Cursor::new(self)
+        self.freeze()
     }
 }
 
@@ -1540,7 +1544,7 @@ impl Clone for BytesMut {
 
 impl IntoIterator for BytesMut {
     type Item = u8;
-    type IntoIter = Iter<Cursor<BytesMut>>;
+    type IntoIter = Iter<Bytes>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.into_buf().iter()
